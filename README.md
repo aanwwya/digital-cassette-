@@ -1,6 +1,6 @@
-# Mujicsx Digital Cassette
+# Digital Cassette
 
-Static vintage cassette/vinyl message site built with HTML, CSS, and JavaScript.
+static vintage cassette/vinyl message site built with html, css and js. 
 
 ## Local setup
 
