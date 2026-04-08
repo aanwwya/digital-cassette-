@@ -52,15 +52,87 @@ html {
 
 body {
   font-family: var(--font-body);
-  background-color: var(--cream);
+  background: linear-gradient(
+    180deg,
+    #fcebea 0%,
+    #f6e3e1 40%,
+    #efe1de 100%
+  );
   color: var(--text-main);
   min-height: 100vh;
   overflow-x: hidden;
-  /* Warm gradient background */
-  background-image:
-    radial-gradient(ellipse 80% 60% at 20% 10%, rgba(232,180,184,0.18) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 80% at 80% 90%, rgba(200,137,90,0.12) 0%, transparent 60%),
-   rgba(255,228,236,1) 0%, rgba(255,210,225,1) 100% 
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: radial-gradient(
+    circle at 50% 20%,
+    rgba(255, 220, 220, 0.35),
+    transparent 60%
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+body.theme-pink {
+  background: linear-gradient(#fcebea, #efe1de);
+}
+
+body.theme-brown {
+  background: linear-gradient(#e7d3c3, #d6b8a5);
+}
+
+body.theme-dark {
+  background: linear-gradient(#1a1a1a, #2b2b2b);
+  color: #f5f5f5;
+}
+
+body.theme-pastel {
+  background: linear-gradient(#e8f0ff, #fbe7f0);
+}
+
+body.theme-brown .cassette-body {
+  background: linear-gradient(160deg, #3c2d24 0%, #24170f 60%, #140c06 100%);
+}
+
+body.theme-dark .cassette-body {
+  background: linear-gradient(160deg, #1d1611 0%, #0d0906 60%, #060403 100%);
+}
+
+body.theme-pastel .cassette-body {
+  background: linear-gradient(160deg, #3d2f2a 0%, #241814 60%, #160f0b 100%);
+}
+
+body.theme-brown .vinyl-label-area {
+  background: linear-gradient(135deg, #efe2d4 0%, #d9c1a7 100%);
+}
+
+body.theme-dark .vinyl-label-area {
+  background: linear-gradient(135deg, #2d2620 0%, #1f1a16 100%);
+}
+
+body.theme-pastel .vinyl-label-area {
+  background: linear-gradient(135deg, #faf0f4 0%, #e7d5e0 100%);
+}
+
+.theme-selector {
+  width: 100%;
+  padding: 13px 16px;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--text-main);
+  background: rgba(255,255,255,0.85);
+  border: 1.5px solid var(--beige);
+  border-radius: var(--radius-md);
+  outline: none;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.theme-selector:focus {
+  border-color: var(--rose-muted);
+  box-shadow: 0 0 0 3px rgba(201,132,138,0.12);
 }
 
 /* ── GRAIN OVERLAY — film grain texture ── */
@@ -340,6 +412,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 28px;
+  background: transparent;
 }
 
 .create-header { text-align: center; }
@@ -388,7 +461,8 @@ body {
 .optional { font-weight: 400; color: var(--text-muted); font-size: 0.85em; text-transform: none; }
 
 .field-input,
-.field-textarea {
+.field-textarea,
+#photoInput {
   width: 100%;
   padding: 13px 16px;
   font-family: var(--font-body);
@@ -467,6 +541,8 @@ body {
   align-items: center;
   gap: 28px;
   margin-top: 40px;
+  position: relative;
+  z-index: 1;
 }
 
 .player-eyebrow {
@@ -489,6 +565,31 @@ body {
   /* Subtle floating / breathing animation when not playing */
 }
 .tape-wrapper:hover { animation-play-state: paused; }
+
+.hidden-photo {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  border-radius: 20px;
+  opacity: 0;
+  filter: blur(10px);
+  transform: scale(1.05);
+  transition: all 0.8s ease;
+  z-index: 0;
+}
+
+.visible-photo {
+  opacity: 0.6;
+  filter: blur(2px);
+  transform: scale(1);
+}
+
+.cassette,
+.vinyl {
+  position: relative;
+  z-index: 1;
+}
 
 /* ════════════════════════════════════════
    CASSETTE TAPE — detailed SVG-like CSS
@@ -541,8 +642,13 @@ body {
 }
 /* Spinning animation — added by JS when playing */
 .reel.spinning {
-  animation: reelSpin 1.8s linear infinite;
+  animation: spin 2s linear infinite;
 }
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 @keyframes reelSpin {
   from { transform: rotate(0deg); }
   to   { transform: rotate(360deg); }
@@ -662,51 +768,62 @@ body {
   height: 280px;
   border-radius: 50%;
   background:
-    /* Record grooves via repeating radial gradient */
     repeating-radial-gradient(
       circle at 50% 50%,
       #1a1006 0px,
       #1a1006 3px,
       #111006 4px,
       #1a1006 5px
-    );
+    ),
+    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0%, transparent 15%);
   display: flex;
   align-items: center;
   justify-content: center;
   position: relative;
-  border: 1.5px solid rgba(255,255,255,0.05);
+  border: 1.5px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 0 0 10px rgba(255,255,255,0.03), 0 18px 40px rgba(0,0,0,0.18);
   transition: transform 0.3s ease;
+}
+.vinyl-disc::before {
+  content: '';
+  position: absolute;
+  width: 220px;
+  height: 220px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.08);
+  box-shadow: inset 0 0 0 4px rgba(0,0,0,0.08);
+  pointer-events: none;
 }
 /* Spinning when playing */
 .vinyl-disc.spinning {
-  animation: reelSpin 3s linear infinite;
+  animation: spin 3s linear infinite;
 }
 
 /* Center label on vinyl */
 .vinyl-label-area {
-  width: 100px;
-  height: 100px;
+  width: 110px;
+  height: 110px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--cream) 0%, #e8d8c0 100%);
+  background: linear-gradient(135deg, var(--cream) 0%, #dfc9b2 100%);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  border: 2px solid rgba(122,92,68,0.2);
-  box-shadow: 0 0 20px rgba(0,0,0,0.4);
-  padding: 8px;
+  border: 2px solid rgba(61,43,31,0.18);
+  box-shadow: 0 0 20px rgba(0,0,0,0.28);
+  padding: 10px;
   z-index: 2;
   position: relative;
 }
 .vinyl-label-song {
   font-family: var(--font-display);
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   font-weight: 600;
   color: var(--deep-brown);
   text-align: center;
   line-height: 1.2;
-  max-width: 80px;
+  max-width: 88px;
   overflow: hidden;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -850,13 +967,24 @@ body {
   border: 1px solid rgba(201,132,138,0.2);
   padding: 28px 32px;
   text-align: center;
+  margin-top: 16px;
   box-shadow: var(--shadow-sm);
   position: relative;
   overflow: hidden;
   animation: floatUp 0.7s ease 0.5s both;
   /* Revealed by JS after play */
   opacity: 0.4;
-  transition: opacity 0.8s ease;
+  transition: opacity 0.8s ease, transform 0.6s ease;
+}
+.message-card.hidden-start {
+  opacity: 0;
+  transform: translateY(10px);
+  animation: none;
+}
+.message-card.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.6s ease;
 }
 .message-card.revealed {
   opacity: 1;
@@ -865,6 +993,25 @@ body {
 @keyframes messageReveal {
   from { opacity: 0.4; transform: scale(0.98); }
   to   { opacity: 1;   transform: scale(1); }
+}
+
+.now-playing.hidden-start {
+  opacity: 0;
+  transform: translateY(10px);
+}
+.now-playing.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+  transition: all 0.6s ease;
+}
+
+.from-signature {
+  margin-top: 10px;
+  font-style: italic;
+  font-family: var(--font-hand);
+  opacity: 0.75;
+  text-align: center;
+  color: var(--text-muted);
 }
 
 /* Decorative top border */
@@ -888,10 +1035,11 @@ body {
 
 .message-text {
   font-family: var(--font-display);
-  font-size: clamp(1rem, 2.5vw, 1.2rem);
+  font-size: 1rem;
   font-style: italic;
   color: var(--text-main);
-  line-height: 1.8;
+  line-height: 1.5;
+  opacity: 0.9;
   quotes: "\201C" "\201D";
 }
 .message-text::before { content: open-quote; color: var(--rose); margin-right: 2px; }
@@ -982,4 +1130,68 @@ body {
 @keyframes songHighlight {
   from { text-shadow: 0 0 0 transparent; }
   to   { text-shadow: 0 0 20px rgba(201,132,138,0.5); }
+}
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.06) 100%);
+  mix-blend-mode: multiply;
+}
+
+.grain-overlay {
+  opacity: 0.05;
+}
+
+.mood-section {
+  margin-top: 32px;
+  text-align: center;
+}
+
+.divider {
+  opacity: 0.5;
+  margin-bottom: 8px;
+}
+
+.mood-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+}
+
+.mood-buttons button {
+  font-family: inherit;
+  font-size: 0.95rem;
+  letter-spacing: 0.3px;
+  color: #5a4a4a;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 999px;
+  padding: 8px 16px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mood-buttons button:hover {
+  transform: translateY(-1px);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+}
+
+.suggestions-box {
+  margin-top: 14px;
+}
+
+.suggestion-item {
+  padding: 8px;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: background 0.2s;
+}
+
+.suggestion-item:hover {
+  background: rgba(0,0,0,0.05);
 }

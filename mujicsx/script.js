@@ -11,6 +11,9 @@ const state = {
   song: '',
   artist: '',
   message: '',
+  from: '',
+  photo: '',
+  theme: 'pink',
   isPlaying: false,
   progressInterval: null,
   currentSeconds: 0,
@@ -21,6 +24,8 @@ const state = {
 const songInput    = document.getElementById('songInput');
 const artistInput  = document.getElementById('artistInput');
 const msgInput     = document.getElementById('msgInput');
+const fromInput    = document.getElementById('fromInput');
+const themeSelector = document.getElementById('themeSelector');
 const charCount    = document.getElementById('charCount');
 const formError    = document.getElementById('formError');
 const playBtn      = document.getElementById('playBtn');
@@ -30,6 +35,7 @@ const reelLeft     = document.getElementById('reelLeft');
 const reelRight    = document.getElementById('reelRight');
 const vinylDisc    = document.getElementById('vinylDisc');
 const messageCard  = document.getElementById('messageCard');
+const nowPlaying   = document.querySelector('.now-playing');
 const toast        = document.getElementById('toast');
 const cassetteEl   = document.getElementById('cassetteEl');
 const vinylEl      = document.getElementById('vinylEl');
@@ -78,6 +84,13 @@ function selectFormat(fmt) {
   document.getElementById('btnVinyl').classList.toggle('active', fmt === 'vinyl');
 }
 
+function applyTheme(theme) {
+  const body = document.body;
+  ['theme-pink', 'theme-brown', 'theme-dark', 'theme-pastel'].forEach(c => body.classList.remove(c));
+  body.classList.add(`theme-${theme}`);
+  state.theme = theme;
+}
+
 
 /* ════════════════════════════════════════════════════
    CHARACTER COUNTER
@@ -102,6 +115,10 @@ function createCard() {
   const song    = songInput.value.trim();
   const artist  = artistInput.value.trim();
   const message = msgInput.value.trim();
+  const from    = fromInput ? fromInput.value.trim() : '';
+  const theme   = themeSelector ? themeSelector.value : state.theme;
+  const file    = document.getElementById('photoInput')?.files[0];
+  const imageURL = file ? URL.createObjectURL(file) : '';
 
   // Basic validation — song and message are required
   if (!song || !message) {
@@ -117,6 +134,9 @@ function createCard() {
   state.song    = song;
   state.artist  = artist;
   state.message = message;
+  state.from    = from;
+  state.photo   = imageURL;
+  state.theme   = theme;
 
   // Encode into URL query params — no server needed!
   const params = new URLSearchParams({
@@ -124,11 +144,15 @@ function createCard() {
     artist: artist,
     msg:    message,
     fmt:    state.format,
+    from:   from,
+    theme:  theme,
   });
 
   // Update browser URL without page reload
   const newUrl = `${window.location.pathname}?${params.toString()}`;
   window.history.pushState({}, '', newUrl);
+
+  applyTheme(theme);
 
   // Populate the player page with the data
   populatePlayer(song, artist, message, state.format);
@@ -173,13 +197,18 @@ function populatePlayer(song, artist, message, fmt) {
   updateProgress(0);
 
   // Set song info in all the label spots
+  const labelArtistText = artist || 'Unknown Artist';
   document.getElementById('labelSong').textContent    = song;
-  document.getElementById('labelArtist').textContent  = artist || 'Unknown Artist';
+  document.getElementById('labelArtist').textContent  = labelArtistText;
   document.getElementById('vinylSong').textContent    = song;
-  document.getElementById('vinylArtist').textContent  = artist || '';
+  document.getElementById('vinylArtist').textContent  = labelArtistText;
   document.getElementById('npSong').textContent       = song;
   document.getElementById('npArtist').textContent     = artist ? `— ${artist}` : '';
   document.getElementById('messageText').textContent  = message;
+  const signatureEl = document.getElementById('fromSignature');
+  if (signatureEl) {
+    signatureEl.textContent = state.from ? `made for you — from ${state.from}` : '';
+  }
 
   // Show correct format visual
   if (fmt === 'vinyl') {
@@ -190,8 +219,13 @@ function populatePlayer(song, artist, message, fmt) {
     vinylEl.classList.add('hidden');
   }
 
-  // Reset message card opacity
-  messageCard.classList.remove('revealed');
+  // Reset message reveal state
+  messageCard.classList.remove('revealed', 'fade-in');
+  messageCard.classList.add('hidden-start');
+  if (nowPlaying) {
+    nowPlaying.classList.remove('fade-in');
+    nowPlaying.classList.add('hidden-start');
+  }
 
   // Remove song highlight
   document.getElementById('npSong').classList.remove('highlighted');
@@ -225,8 +259,20 @@ function startPlayer() {
   reelRight.classList.add('spinning');
   vinylDisc.classList.add('spinning');
 
-  // Reveal the message card
-  messageCard.classList.add('revealed');
+  // Reveal the hidden photo if one was provided
+  const photoEl = document.getElementById('hiddenPhoto');
+  if (state.photo && photoEl) {
+    photoEl.style.backgroundImage = `url(${state.photo})`;
+    photoEl.classList.add('visible-photo');
+  }
+
+  // Fade in the message and now playing info
+  messageCard.classList.remove('hidden-start');
+  messageCard.classList.add('fade-in');
+  if (nowPlaying) {
+    nowPlaying.classList.remove('hidden-start');
+    nowPlaying.classList.add('fade-in');
+  }
 
   // Highlight song title
   document.getElementById('npSong').classList.add('highlighted');
@@ -308,11 +354,30 @@ function formatTime(s) {
 
 /* ════════════════════════════════════════════════════
    SHARE LINK
-   Copies the current URL (with query params) to clipboard
+   Builds a stable share URL from current card state and copies it
 ════════════════════════════════════════════════════ */
 
+function getShareUrl() {
+  const params = new URLSearchParams({
+    song:   state.song,
+    artist: state.artist,
+    msg:    state.message,
+    fmt:    state.format,
+    from:   state.from,
+    theme:  state.theme,
+  });
+
+  const base = window.location.href.split('?')[0];
+  return `${base}?${params.toString()}`;
+}
+
 function copyShareLink() {
-  const url = window.location.href;
+  if (!state.song || !state.message) {
+    showToast('Create a card first before copying a link.');
+    return;
+  }
+
+  const url = getShareUrl();
 
   // Use the Clipboard API if available, fallback to execCommand
   if (navigator.clipboard && window.isSecureContext) {
@@ -510,6 +575,47 @@ function createSparkle() {
   setTimeout(() => sparkle.remove(), (dur + delay) * 1000);
 }
 
+const moodSongs = {
+  romantic: [
+    { song: "I Wanna Be Yours", artist: "Arctic Monkeys", link: "https://open.spotify.com/track/5XeFesFbtLpXzIVDNQP22n" },
+    { song: "Until I Found You", artist: "Stephen Sanchez", link: "https://open.spotify.com/track/3r8RuvgbX9s7ammBn07D3W" }
+  ],
+  sad: [
+    { song: "Another Love", artist: "Tom Odell", link: "https://open.spotify.com/track/3JvKfv6T31zO0ini8iNItO" }
+  ],
+  happy: [
+    { song: "Golden", artist: "Harry Styles", link: "https://open.spotify.com/track/45S5WTQEGOB1VHr1Q4FuPl" }
+  ],
+  nostalgic: [
+    { song: "Yellow", artist: "Coldplay", link: "https://open.spotify.com/track/3AJwUDP919kvQ9QcozQPxg" }
+  ],
+  lofi: [
+    { song: "Lofi Study Beats", artist: "Various", link: "https://open.spotify.com/track/1nFtiJxYdhtFfFtfXBjDTq" }
+  ]
+};
+
+function showSuggestions(mood) {
+  const box = document.getElementById("suggestionsBox");
+  const songs = moodSongs[mood] || [];
+
+  box.innerHTML = songs.map((s, i) => `
+    <div class="suggestion-item" onclick="selectSuggestion('${mood}', ${i})">
+      🎵 ${s.song} — ${s.artist}
+    </div>
+  `).join("");
+}
+
+function selectSuggestion(mood, index) {
+  const s = moodSongs[mood][index];
+  const songEl = document.getElementById("songInput");
+  const artistEl = document.getElementById("artistInput");
+  const spotifyEl = document.getElementById("spotifyInput");
+
+  if (songEl) songEl.value = s.song;
+  if (artistEl) artistEl.value = s.artist;
+  if (spotifyEl) spotifyEl.value = s.link;
+}
+
 // Create sparkles on an interval — keeps it subtle
 setInterval(createSparkle, 600);
 // Seed a few immediately
@@ -529,7 +635,11 @@ function parseUrlAndLoad() {
   const song    = params.get('song');
   const artist  = params.get('artist') || '';
   const message = params.get('msg');
+  const from    = params.get('from') || '';
+  const theme   = params.get('theme') || 'pink';
   const fmt     = params.get('fmt') || 'cassette';
+
+  applyTheme(theme);
 
   // Only auto-navigate if both required fields exist
   if (song && message) {
@@ -537,14 +647,19 @@ function parseUrlAndLoad() {
     state.song    = song;
     state.artist  = artist;
     state.message = message;
+    state.from    = from;
+    state.theme   = theme;
     state.format  = fmt;
 
     // Populate form fields too (in case user goes back to edit)
     songInput.value   = song;
     artistInput.value = artist;
     msgInput.value    = message;
+    if (fromInput) fromInput.value = from;
+    if (themeSelector) themeSelector.value = theme;
     charCount.textContent = `${message.length} / 200`;
     selectFormat(fmt);
+    applyTheme(theme);
 
     // Go straight to player
     populatePlayer(song, artist, message, fmt);

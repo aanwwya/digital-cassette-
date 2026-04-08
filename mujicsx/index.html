@@ -131,6 +131,25 @@
           <span class="char-count" id="charCount">0 / 200</span>
         </div>
 
+        <!-- Memory Image (optional) -->
+        <div class="field-group">
+          <label class="field-label">Memory Image <span class="optional">(optional)</span></label>
+          <input type="file" id="photoInput" accept="image/*" />
+        </div>
+
+        <!-- From (optional) -->
+        <div class="field-group">
+          <label class="field-label" for="fromInput">From <span class="optional">(optional)</span></label>
+          <input
+            type="text"
+            id="fromInput"
+            class="field-input"
+            placeholder="your name…"
+            maxlength="40"
+            autocomplete="off"
+          />
+        </div>
+
         <!-- Format Selector -->
         <div class="field-group">
           <label class="field-label">Format</label>
@@ -144,6 +163,17 @@
           </div>
         </div>
 
+        <!-- Theme Selector -->
+        <div class="field-group">
+          <label class="field-label" for="themeSelector">Theme</label>
+          <select id="themeSelector" class="theme-selector" onchange="applyTheme(this.value)">
+            <option value="pink">Soft Pink</option>
+            <option value="brown">Brown Vintage</option>
+            <option value="dark">Dark Night</option>
+            <option value="pastel">Pastel Dreamy</option>
+          </select>
+        </div>
+
         <!-- Error message -->
         <p class="form-error hidden" id="formError">Please add a song name and a message. 🌙</p>
 
@@ -154,6 +184,21 @@
         </button>
 
       </div><!-- /form-card -->
+
+      <div class="mood-section">
+        <p class="divider">— or —</p>
+        <h3 class="mood-title">Pick a mood</h3>
+
+        <div class="mood-buttons">
+          <button onclick="showSuggestions('romantic')">Romantic</button>
+          <button onclick="showSuggestions('sad')">Sad</button>
+          <button onclick="showSuggestions('happy')">Happy</button>
+          <button onclick="showSuggestions('nostalgic')">Nostalgic</button>
+          <button onclick="showSuggestions('lofi')">Lofi</button>
+        </div>
+
+        <div id="suggestionsBox" class="suggestions-box"></div>
+      </div>
 
     </div><!-- /create-container -->
 
@@ -175,7 +220,6 @@
 
       <!-- Recipient line -->
       <p class="player-eyebrow">someone made this for you</p>
-
       <!-- ── CASSETTE VISUAL ── -->
       <div class="tape-wrapper" id="tapeWrapper" aria-label="Cassette tape player">
 
@@ -236,6 +280,7 @@
           <div class="vinyl-spindle" aria-hidden="true"></div>
         </div>
 
+        <div class="hidden-photo" id="hiddenPhoto"></div>
       </div><!-- /tape-wrapper -->
 
 
@@ -259,7 +304,7 @@
         </div>
 
         <!-- Song info below controls -->
-        <div class="now-playing">
+        <div class="now-playing hidden-start">
           <p class="np-song" id="npSong">—</p>
           <p class="np-artist" id="npArtist">—</p>
         </div>
@@ -268,11 +313,12 @@
 
 
       <!-- ── MESSAGE CARD ── -->
-      <div class="message-card" id="messageCard">
+      <div class="message-card hidden-start" id="messageCard">
         <p class="message-label">✦ a note for you ✦</p>
         <blockquote class="message-text" id="messageText">
           Your message will appear here.
         </blockquote>
+        <p class="from-signature" id="fromSignature"></p>
       </div>
 
 
